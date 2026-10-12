@@ -5,7 +5,7 @@ const kategorier = [
   { navn: "Perler", ikon: "📿", link: "/kategori/perler" },
   { navn: "Papir", ikon: "📄", link: "/kategori/papir" },
   { navn: "Gaveidéer", ikon: "🎁", link: "/kategori/gaveideer" },
-  { navn: "Anledning", ikon: "🎁", link: "/kategori/Anledning" },
+  { navn: "Anledning", ikon: "🎉", link: "/kategori/Anledning" },
 ];
 
 export default function Forside() {
@@ -15,7 +15,7 @@ export default function Forside() {
         {/* Velkomsttekst */}
         <section className="text-center">
           <h1 className="text-3xl font-bold sm:text-4xl">
-            Velkommen til Kreativ Stue
+            Velkommen til Det Kreative Forum
           </h1>
           <p className="mt-4 text-lg leading-relaxed">
             Her deler vi det, vi selv har lavet, og henter inspiration til
@@ -29,7 +29,7 @@ export default function Forside() {
             <Link
               key={kategori.navn}
               href={kategori.link}
-              className="flex flex-col items-center justify-center rounded-2xl bg-white p-6 shadow-sm ring-1 ring-green-200 transition hover:bg-green-100"
+              className="flex flex-col last:odd:col-span-2 items-center justify-center rounded-2xl bg-white p-6 shadow-sm ring-1 ring-green-200 transition hover:bg-green-100"
             >
               <span className="text-5xl" aria-hidden="true">
                 {kategori.ikon}
