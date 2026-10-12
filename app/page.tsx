@@ -5,7 +5,7 @@ const kategorier = [
   { navn: "Perler", ikon: "📿", link: "/kategori/perler" },
   { navn: "Papir", ikon: "📄", link: "/kategori/papir" },
   { navn: "Gaveidéer", ikon: "🎁", link: "/kategori/gaveideer" },
-  { navn: "Anledning", ikon: "🎉", link: "/kategori/Anledning" },
+  { navn: "Anledning", ikon: "🎉", link: "/kategori/anledninger" },
 ];
 
 export default function Forside() {
