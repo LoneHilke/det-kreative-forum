@@ -25,7 +25,7 @@ export default function Registrer() {
   const [fejl, setFejl] = useState<string | null>(null);
   const [sender, setSender] = useState(false);
 
-  async function opret(e: FormEvent<HTMLFormElement>) {
+    async function opret(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setFejl(null);
     setBesked(null);
@@ -41,31 +41,38 @@ export default function Registrer() {
     }
 
     setSender(true);
-    const supabase = createClient();
-    // Fødselsdatoen sendes ikke videre og gemmes ikke. Kun navn og e-mail.
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: {
-        shouldCreateUser: true,
-        data: { name: navn.trim() },
-        emailRedirectTo: window.location.origin,
-      },
-    });
-    setSender(false);
+    try {
+      const supabase = createClient();
+      // Fødselsdatoen sendes ikke videre og gemmes ikke. Kun navn og e-mail.
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: {
+          shouldCreateUser: true,
+          data: { name: navn.trim() },
+          emailRedirectTo: window.location.origin,
+        },
+      });
 
-    if (error) {
-      console.error(error);
-      setFejl(
-        "Det lykkedes ikke at sende linket. Vent et minut, og prøv igen."
+      if (error) {
+        console.error(error);
+        setFejl(
+          "Det lykkedes ikke at sende linket. Vent et minut, og prøv igen."
+        );
+        return;
+      }
+
+      setFodselsdato("");
+      setBesked(
+        "Tjek din e-mail. Vi har sendt et link, som logger dig ind. Husk også at kigge i spam."
       );
-      return;
+    } catch (err) {
+      console.error(err);
+      setFejl("Noget gik galt hos os, ikke hos dig. Prøv igen om lidt.");
+    } finally {
+      setSender(false);
     }
-
-    setFodselsdato("");
-    setBesked(
-      "Tjek din e-mail. Vi har sendt et link, som logger dig ind. Husk også at kigge i spam."
-    );
   }
+  
 
   return (
     <main className="min-h-screen bg-green-50 text-green-950">

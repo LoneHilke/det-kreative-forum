@@ -10,34 +10,40 @@ export default function Login() {
   const [fejl, setFejl] = useState<string | null>(null);
   const [sender, setSender] = useState(false);
 
-  async function logInd(e: FormEvent<HTMLFormElement>) {
+    async function logInd(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setFejl(null);
     setBesked(null);
     setSender(true);
 
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: {
-        // Her kan man kun logge ind, ikke oprette sig. Det sker på siden "Opret bruger".
-        shouldCreateUser: false,
-        emailRedirectTo: window.location.origin,
-      },
-    });
-    setSender(false);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: {
+          // Her kan man kun logge ind, ikke oprette sig. Det sker på siden "Opret bruger".
+          shouldCreateUser: false,
+          emailRedirectTo: window.location.origin,
+        },
+      });
 
-    if (error) {
-      console.error(error);
-      setFejl(
-        "Det lykkedes ikke at sende et link. Tjek adressen, og vent et minut, hvis du lige har prøvet. Har du ikke en bruger endnu, kan du oprette en."
+      if (error) {
+        console.error(error);
+        setFejl(
+          "Det lykkedes ikke at sende et link. Tjek adressen, og vent et minut, hvis du lige har prøvet. Har du ikke en bruger endnu, kan du oprette en."
+        );
+        return;
+      }
+
+      setBesked(
+        "Tjek din e-mail. Vi har sendt et link, som logger dig ind. Husk også at kigge i spam."
       );
-      return;
+    } catch (err) {
+      console.error(err);
+      setFejl("Noget gik galt hos os, ikke hos dig. Prøv igen om lidt.");
+    } finally {
+      setSender(false);
     }
-
-    setBesked(
-      "Tjek din e-mail. Vi har sendt et link, som logger dig ind. Husk også at kigge i spam."
-    );
   }
 
   return (
