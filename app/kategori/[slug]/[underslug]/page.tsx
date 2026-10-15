@@ -44,6 +44,15 @@ export default async function Underkategoriside({
           <h1 className="mt-3 text-3xl font-bold sm:text-4xl">{under.navn}</h1>
         </section>
 
+        <div className="mt-8 text-center">
+          <Link
+            href={`/kategori/${hoved.slug}/${under.slug}/nyt`}
+            className="inline-block rounded-xl bg-green-700 px-5 py-3 font-semibold text-white transition hover:bg-green-800"
+          >
+            ✏️ Lav et opslag
+          </Link>
+        </div>
+
         <section className="mt-10 rounded-2xl bg-white p-8 text-center ring-1 ring-green-200">
           <p className="text-lg leading-relaxed">
             Der er ingen opslag her endnu.
