@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { hovedkategorier } from "../../../../data/kategorier";
+import OpslagListe from "../../../../components/OpslagListe";
 
 export function generateStaticParams() {
   return hovedkategorier.flatMap((hoved) =>
@@ -53,11 +55,11 @@ export default async function Underkategoriside({
           </Link>
         </div>
 
-        <section className="mt-10 rounded-2xl bg-white p-8 text-center ring-1 ring-green-200">
-          <p className="text-lg leading-relaxed">
-            Der er ingen opslag her endnu.
-          </p>
-        </section>
+        <Suspense
+          fallback={<p className="mt-10 text-center">Henter opslag...</p>}
+        >
+          <OpslagListe kategori={`${hoved.slug}/${under.slug}`} />
+        </Suspense>
       </div>
     </main>
   );
