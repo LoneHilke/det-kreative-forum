@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { createClient } from "../../../utils/supabase/server";
 import { hovedkategorier } from "../../../data/kategorier";
+import Kommentarer from "../../../components/Kommentarer";
 
 const niveauNavne: Record<string, string> = {
   startprojekt: "Startprojekt",
@@ -155,6 +156,12 @@ async function OpslagIndhold({ params }: { params: Promise<{ id: string }> }) {
           </div>
         </div>
       )}
+
+      <section className="mt-10">
+        <Suspense fallback={<p>Henter kommentarer...</p>}>
+          <Kommentarer opslagId={o.id} />
+        </Suspense>
+      </section>
     </article>
   );
 }
