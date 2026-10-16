@@ -13,6 +13,7 @@ type Opslag = {
   tekst: string;
   niveau: string | null;
   god_med_boern: boolean;
+  er_spoergsmaal: boolean;
   oprettet: string;
   profiler: { navn: string } | null;
 };
@@ -35,7 +36,9 @@ export default async function OpslagListe({ kategori }: { kategori: string }) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("opslag")
-    .select("id, titel, tekst, niveau, god_med_boern, oprettet, profiler(navn)")
+    .select(
+      "id, titel, tekst, niveau, god_med_boern, er_spoergsmaal, oprettet, profiler(navn)"
+    )
     .contains("kategorier", [kategori])
     .order("oprettet", { ascending: false })
     .limit(50);
@@ -69,7 +72,14 @@ export default async function OpslagListe({ kategori }: { kategori: string }) {
           href={`/opslag/${o.id}`}
           className="block rounded-2xl bg-white p-5 shadow-sm ring-1 ring-green-200 transition hover:bg-green-100"
         >
-          <h2 className="text-xl font-semibold">{o.titel}</h2>
+          <h2 className="text-xl font-semibold">
+            {o.er_spoergsmaal && (
+              <span aria-label="Spørgsmål" title="Spørgsmål">
+                ❓{" "}
+              </span>
+            )}
+            {o.titel}
+          </h2>
           {o.tekst && (
             <p className="mt-2 leading-relaxed">{kortTekst(o.tekst)}</p>
           )}

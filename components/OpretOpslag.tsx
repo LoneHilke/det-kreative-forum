@@ -30,6 +30,7 @@ export default function OpretOpslag({
   const [valgte, setValgte] = useState<string[]>([forvalgt]);
   const [niveau, setNiveau] = useState("");
   const [godMedBoern, setGodMedBoern] = useState(false);
+  const [erSpoergsmaal, setErSpoergsmaal] = useState(false);
   const [fejl, setFejl] = useState<string | null>(null);
   const [sender, setSender] = useState(false);
   const [faerdig, setFaerdig] = useState(false);
@@ -64,6 +65,7 @@ export default function OpretOpslag({
     setValgte([forvalgt]);
     setNiveau("");
     setGodMedBoern(false);
+    setErSpoergsmaal(false);
     setFejl(null);
     setFaerdig(false);
   }
@@ -90,6 +92,7 @@ export default function OpretOpslag({
         kategorier: valgte,
         niveau: niveau || null,
         god_med_boern: godMedBoern,
+        er_spoergsmaal: erSpoergsmaal,
       });
 
       if (error) {
@@ -192,6 +195,22 @@ export default function OpretOpslag({
           className={feltStil}
         />
       </div>
+
+      <label className="flex items-start gap-3 rounded-2xl bg-white p-4 ring-1 ring-green-200">
+        <input
+          type="checkbox"
+          checked={erSpoergsmaal}
+          onChange={(e) => setErSpoergsmaal(e.target.checked)}
+          className="mt-1 h-5 w-5"
+        />
+        <span>
+          <span className="font-medium">❓ Det her er et spørgsmål</span>
+          <span className="block text-sm text-green-900">
+            Sæt kryds, hvis du gerne vil have hjælp. Så kan andre se det på
+            opslaget.
+          </span>
+        </span>
+      </label>
 
       <fieldset>
         <legend className="font-medium">
