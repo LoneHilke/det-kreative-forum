@@ -5,6 +5,7 @@ import { createClient } from "../../../utils/supabase/server";
 import { hovedkategorier } from "../../../data/kategorier";
 import Kommentarer from "../../../components/Kommentarer";
 import AnmeldKnap from "../../../components/AnmeldKnap";
+import OpslagHandlinger from "../../../components/OpslagHandlinger";
 
 const niveauNavne: Record<string, string> = {
   startprojekt: "Startprojekt",
@@ -14,6 +15,7 @@ const niveauNavne: Record<string, string> = {
 
 type Opslag = {
   id: string;
+  forfatter_id: string;
   titel: string;
   tekst: string;
   kategorier: string[];
@@ -74,7 +76,7 @@ async function OpslagIndhold({ params }: { params: Promise<{ id: string }> }) {
   const { data, error } = await supabase
     .from("opslag")
     .select(
-      "id, titel, tekst, kategorier, niveau, god_med_boern, er_spoergsmaal, oprettet, profiler(navn)"
+      "id, forfatter_id, titel, tekst, kategorier, niveau, god_med_boern, er_spoergsmaal, oprettet, profiler(navn)"
     )
     .eq("id", id)
     .maybeSingle();
@@ -97,13 +99,11 @@ async function OpslagIndhold({ params }: { params: Promise<{ id: string }> }) {
     .map(findKategori)
     .filter((k): k is { link: string; navn: string } => k !== null);
   const foerste = kategorier[0];
+  const tilbageLink = foerste ? foerste.link : "/";
 
   return (
     <article>
-      <Link
-        href={foerste ? foerste.link : "/"}
-        className="font-medium underline underline-offset-4"
-      >
+      <Link href={tilbageLink} className="font-medium underline underline-offset-4">
         ← Tilbage
       </Link>
 
@@ -157,6 +157,12 @@ async function OpslagIndhold({ params }: { params: Promise<{ id: string }> }) {
           </div>
         </div>
       )}
+
+      <OpslagHandlinger
+        opslagId={o.id}
+        forfatterId={o.forfatter_id}
+        tilbageLink={tilbageLink}
+      />
 
       <div className="mt-6">
         <AnmeldKnap opslagId={o.id} />
