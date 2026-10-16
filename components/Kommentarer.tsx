@@ -1,6 +1,7 @@
 import { createClient } from "../utils/supabase/server";
 import KommentarFormular from "./KommentarFormular";
 import SletKommentar from "./SletKommentar";
+import AnmeldKnap from "./AnmeldKnap";
 
 type Kommentar = {
   id: string;
@@ -96,11 +97,12 @@ export default async function Kommentarer({ opslagId }: { opslagId: string }) {
               <p className="mt-2 leading-relaxed whitespace-pre-wrap">
                 {visTekst(k.tekst)}
               </p>
-              {minId && (k.forfatter_id === minId || erAdmin) && (
-                <p className="mt-2">
+              <div className="mt-2 flex flex-wrap items-start gap-x-4 gap-y-1">
+                {minId && (k.forfatter_id === minId || erAdmin) && (
                   <SletKommentar id={k.id} />
-                </p>
-              )}
+                )}
+                <AnmeldKnap opslagId={opslagId} kommentarId={k.id} />
+              </div>
             </li>
           ))}
         </ul>

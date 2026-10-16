@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "../../../utils/supabase/server";
 import { hovedkategorier } from "../../../data/kategorier";
 import Kommentarer from "../../../components/Kommentarer";
+import AnmeldKnap from "../../../components/AnmeldKnap";
 
 const niveauNavne: Record<string, string> = {
   startprojekt: "Startprojekt",
@@ -156,6 +157,10 @@ async function OpslagIndhold({ params }: { params: Promise<{ id: string }> }) {
           </div>
         </div>
       )}
+
+      <div className="mt-6">
+        <AnmeldKnap opslagId={o.id} />
+      </div>
 
       <section className="mt-10">
         <Suspense fallback={<p>Henter kommentarer...</p>}>
