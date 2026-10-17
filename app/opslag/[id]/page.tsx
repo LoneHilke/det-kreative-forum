@@ -6,6 +6,7 @@ import { hovedkategorier } from "../../../data/kategorier";
 import Kommentarer from "../../../components/Kommentarer";
 import AnmeldKnap from "../../../components/AnmeldKnap";
 import OpslagHandlinger from "../../../components/OpslagHandlinger";
+import Reaktioner from "../../../components/Reaktioner";
 
 const niveauNavne: Record<string, string> = {
   startprojekt: "Startprojekt",
@@ -140,6 +141,8 @@ async function OpslagIndhold({ params }: { params: Promise<{ id: string }> }) {
           {o.tekst}
         </div>
       )}
+
+      <Reaktioner opslagId={o.id} />
 
       {kategorier.length > 0 && (
         <div className="mt-6">
