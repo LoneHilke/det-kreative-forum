@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { createClient } from "../utils/supabase/client";
 import { hovedkategorier } from "../data/kategorier";
+import { MAKS_BILLEDER, uploadBilleder } from "../utils/billede";
+import BilledVaelger from "./BilledVaelger";
 
 const niveauer = [
   { vaerdi: "", navn: "Ikke angivet" },
@@ -31,7 +33,9 @@ export default function OpretOpslag({
   const [niveau, setNiveau] = useState("");
   const [godMedBoern, setGodMedBoern] = useState(false);
   const [erSpoergsmaal, setErSpoergsmaal] = useState(false);
+  const [billeder, setBilleder] = useState<File[]>([]);
   const [fejl, setFejl] = useState<string | null>(null);
+  const [advarsel, setAdvarsel] = useState<string | null>(null);
   const [sender, setSender] = useState(false);
   const [faerdig, setFaerdig] = useState(false);
 
@@ -66,13 +70,16 @@ export default function OpretOpslag({
     setNiveau("");
     setGodMedBoern(false);
     setErSpoergsmaal(false);
+    setBilleder([]);
     setFejl(null);
+    setAdvarsel(null);
     setFaerdig(false);
   }
 
   async function laegOp(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setFejl(null);
+    setAdvarsel(null);
 
     if (valgte.length === 0) {
       setFejl("Vælg mindst én underkategori, så andre kan finde dit opslag.");
@@ -86,20 +93,42 @@ export default function OpretOpslag({
     setSender(true);
     try {
       const supabase = createClient();
-      const { error } = await supabase.from("opslag").insert({
-        titel: titel.trim(),
-        tekst: tekst.trim(),
-        kategorier: valgte,
-        niveau: niveau || null,
-        god_med_boern: godMedBoern,
-        er_spoergsmaal: erSpoergsmaal,
-      });
+      const { data: ny, error } = await supabase
+        .from("opslag")
+        .insert({
+          titel: titel.trim(),
+          tekst: tekst.trim(),
+          kategorier: valgte,
+          niveau: niveau || null,
+          god_med_boern: godMedBoern,
+          er_spoergsmaal: erSpoergsmaal,
+        })
+        .select("id")
+        .single();
 
-      if (error) {
+      if (error || !ny) {
         console.error(error);
         setFejl("Det lykkedes ikke at lægge opslaget op. Prøv igen om lidt.");
         return;
       }
+
+      if (billeder.length > 0) {
+        const { data: session } = await supabase.auth.getSession();
+        const brugerId = session.session?.user.id;
+        if (!brugerId) {
+          setAdvarsel("Billederne kunne ikke lægges op.");
+        } else {
+          const resultat = await uploadBilleder(
+            supabase,
+            brugerId,
+            ny.id,
+            billeder,
+            0
+          );
+          if (resultat.fejl) setAdvarsel(resultat.fejl);
+        }
+      }
+
       setFaerdig(true);
     } catch (err) {
       console.error(err);
@@ -143,6 +172,12 @@ export default function OpretOpslag({
         <p className="text-lg leading-relaxed">
           🎉 Dit opslag er lagt op. Tak, fordi du deler.
         </p>
+        {advarsel && (
+          <p className="mt-3 rounded-xl bg-red-50 p-3 text-red-900" role="alert">
+            Opslaget er lagt op, men ikke alle billeder kunne lægges op.{" "}
+            {advarsel}
+          </p>
+        )}
         <div className="mt-5 flex flex-wrap justify-center gap-3">
           <Link
             href={tilbageLink}
@@ -195,6 +230,12 @@ export default function OpretOpslag({
           className={feltStil}
         />
       </div>
+
+      <BilledVaelger
+        filer={billeder}
+        onAendr={setBilleder}
+        maks={MAKS_BILLEDER}
+      />
 
       <label className="flex items-start gap-3 rounded-2xl bg-white p-4 ring-1 ring-green-200">
         <input
@@ -290,7 +331,11 @@ export default function OpretOpslag({
         disabled={sender}
         className="w-full rounded-xl bg-green-700 px-5 py-3 font-semibold text-white transition hover:bg-green-800 disabled:opacity-60"
       >
-        {sender ? "Lægger op..." : "Læg opslaget op"}
+        {sender
+          ? billeder.length > 0
+            ? "Lægger op og gør billeder mindre..."
+            : "Lægger op..."
+          : "Læg opslaget op"}
       </button>
     </form>
   );

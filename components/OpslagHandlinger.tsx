@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "../utils/supabase/client";
+import { BILLED_BUCKET } from "../utils/billede";
 
 export default function OpslagHandlinger({
   opslagId,
@@ -50,7 +51,7 @@ export default function OpslagHandlinger({
   async function slet() {
     if (
       !window.confirm(
-        "Vil du slette opslaget? Kommentarer og anmeldelser under det bliver også slettet. Det kan ikke fortrydes."
+        "Vil du slette opslaget? Billeder, kommentarer og anmeldelser under det bliver også slettet. Det kan ikke fortrydes."
       )
     ) {
       return;
@@ -60,6 +61,29 @@ export default function OpslagHandlinger({
     setFejl(null);
     try {
       const supabase = createClient();
+
+      // Slet billedfilerne først, så de ikke ligger tilbage og fylder.
+      const { data: billeder, error: hentFejl } = await supabase
+        .from("opslag_billeder")
+        .select("sti")
+        .eq("opslag_id", opslagId);
+      if (hentFejl) throw hentFejl;
+
+      const stier = (billeder ?? []).map((b) => b.sti as string);
+      if (stier.length > 0) {
+        const { data: fjernet, error: fjernFejl } = await supabase.storage
+          .from(BILLED_BUCKET)
+          .remove(stier);
+        if (fjernFejl) {
+          console.error(fjernFejl);
+          setFejl("Billederne kunne ikke slettes. Prøv igen om lidt.");
+          return;
+        }
+        if ((fjernet?.length ?? 0) < stier.length) {
+          console.warn("Ikke alle billedfiler blev fundet.");
+        }
+      }
+
       const { data, error } = await supabase
         .from("opslag")
         .delete()

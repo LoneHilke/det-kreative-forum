@@ -7,6 +7,7 @@ import Kommentarer from "../../../components/Kommentarer";
 import AnmeldKnap from "../../../components/AnmeldKnap";
 import OpslagHandlinger from "../../../components/OpslagHandlinger";
 import Reaktioner from "../../../components/Reaktioner";
+import { BILLED_BUCKET } from "../../../utils/billede";
 
 const niveauNavne: Record<string, string> = {
   startprojekt: "Startprojekt",
@@ -96,6 +97,22 @@ async function OpslagIndhold({ params }: { params: Promise<{ id: string }> }) {
   }
 
   const o = data as unknown as Opslag;
+
+  const { data: billedData } = await supabase
+    .from("opslag_billeder")
+    .select("id, sti")
+    .eq("opslag_id", o.id)
+    .order("raekkefoelge", { ascending: true })
+    .order("oprettet", { ascending: true });
+
+  const billeder = ((billedData ?? []) as unknown as { id: string; sti: string }[]).map(
+    (b) => ({
+      id: b.id,
+      url: supabase.storage.from(BILLED_BUCKET).getPublicUrl(b.sti).data
+        .publicUrl,
+    })
+  );
+
   const kategorier = o.kategorier
     .map(findKategori)
     .filter((k): k is { link: string; navn: string } => k !== null);
@@ -133,6 +150,36 @@ async function OpslagIndhold({ params }: { params: Promise<{ id: string }> }) {
               God med børn
             </span>
           )}
+        </div>
+      )}
+
+      {billeder.length > 0 && (
+        <div
+          className={`mt-6 grid gap-3 ${
+            billeder.length === 1 ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"
+          }`}
+        >
+          {billeder.map((b, i) => (
+            <a
+              key={b.id}
+              href={b.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={b.url}
+                alt={`Billede ${i + 1} af ${billeder.length} til opslaget ${o.titel}`}
+                loading="lazy"
+                className={
+                  billeder.length === 1
+                    ? "mx-auto max-h-[32rem] w-auto max-w-full rounded-xl ring-1 ring-green-200"
+                    : "aspect-[4/3] w-full rounded-xl object-cover ring-1 ring-green-200"
+                }
+              />
+            </a>
+          ))}
         </div>
       )}
 
