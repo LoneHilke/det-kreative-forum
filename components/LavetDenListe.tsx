@@ -1,5 +1,6 @@
 import { createClient } from "../utils/supabase/server";
 import { BILLED_BUCKET } from "../utils/billede";
+import AnmeldKnap from "./AnmeldKnap";
 
 type Bidrag = {
   id: string;
@@ -79,6 +80,9 @@ export default async function LavetDenListe({ opslagId }: { opslagId: string }) 
                   {b.tekst}
                 </p>
               )}
+              <div className="mt-2">
+                <AnmeldKnap opslagId={opslagId} bidragId={b.id} />
+              </div>
             </li>
           );
         })}

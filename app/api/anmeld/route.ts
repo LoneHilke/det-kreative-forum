@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import nodemailer from "nodemailer";
 import { createClient } from "../../../utils/supabase/server";
+import { BILLED_BUCKET } from "../../../utils/billede";
 
 const uuidMoenster =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -11,6 +12,14 @@ type KommentarRaekke = {
   id: string;
   opslag_id: string;
   tekst: string;
+  profiler: ProfilNavn;
+};
+
+type BidragRaekke = {
+  id: string;
+  opslag_id: string;
+  tekst: string;
+  sti: string | null;
   profiler: ProfilNavn;
 };
 
@@ -34,7 +43,12 @@ export async function POST(request: NextRequest) {
     return svar(400, "Ugyldig forespørgsel.");
   }
 
-  let body: { opslagId?: unknown; kommentarId?: unknown; aarsag?: unknown };
+  let body: {
+    opslagId?: unknown;
+    kommentarId?: unknown;
+    bidragId?: unknown;
+    aarsag?: unknown;
+  };
   try {
     body = await request.json();
   } catch {
@@ -44,6 +58,7 @@ export async function POST(request: NextRequest) {
   const aarsag = typeof body.aarsag === "string" ? body.aarsag.trim() : "";
   const kommentarId =
     typeof body.kommentarId === "string" ? body.kommentarId : null;
+  const bidragId = typeof body.bidragId === "string" ? body.bidragId : null;
   let opslagId = typeof body.opslagId === "string" ? body.opslagId : "";
 
   if (!aarsag || aarsag.length > 1000) {
@@ -53,6 +68,12 @@ export async function POST(request: NextRequest) {
     return svar(400, "Ugyldig forespørgsel.");
   }
   if (kommentarId !== null && !uuidMoenster.test(kommentarId)) {
+    return svar(400, "Ugyldig forespørgsel.");
+  }
+  if (bidragId !== null && !uuidMoenster.test(bidragId)) {
+    return svar(400, "Ugyldig forespørgsel.");
+  }
+  if (kommentarId !== null && bidragId !== null) {
     return svar(400, "Ugyldig forespørgsel.");
   }
 
@@ -66,6 +87,7 @@ export async function POST(request: NextRequest) {
   // Find det anmeldte indhold
   let indhold = "";
   let forfatter = "Slettet bruger";
+  let billedLink: string | null = null;
 
   if (kommentarId) {
     const { data: kData } = await supabase
@@ -80,6 +102,23 @@ export async function POST(request: NextRequest) {
     forfatter = k.profiler?.navn ?? forfatter;
   }
 
+  if (bidragId) {
+    const { data: bData } = await supabase
+      .from("har_lavet_den")
+      .select("id, opslag_id, tekst, sti, profiler(navn)")
+      .eq("id", bidragId)
+      .maybeSingle();
+    const b = bData as unknown as BidragRaekke | null;
+    if (!b) return svar(404, "Bidraget findes ikke.");
+    opslagId = b.opslag_id;
+    indhold = b.tekst;
+    forfatter = b.profiler?.navn ?? forfatter;
+    if (b.sti) {
+      billedLink = supabase.storage.from(BILLED_BUCKET).getPublicUrl(b.sti).data
+        .publicUrl;
+    }
+  }
+
   const { data: oData } = await supabase
     .from("opslag")
     .select("id, titel, tekst, profiler(navn)")
@@ -88,7 +127,7 @@ export async function POST(request: NextRequest) {
   const o = oData as unknown as OpslagRaekke | null;
   if (!o) return svar(404, "Opslaget findes ikke.");
 
-  if (!kommentarId) {
+  if (!kommentarId && !bidragId) {
     indhold = o.tekst;
     forfatter = o.profiler?.navn ?? forfatter;
   }
@@ -103,6 +142,7 @@ export async function POST(request: NextRequest) {
   const { error: indsaetFejl } = await supabase.from("anmeldelser").insert({
     opslag_id: opslagId,
     kommentar_id: kommentarId,
+    bidrag_id: bidragId,
     aarsag,
   });
 
@@ -124,7 +164,11 @@ export async function POST(request: NextRequest) {
   if (SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASSWORD && ANMELD_TIL) {
     try {
       const origin = new URL(request.url).origin;
-      const type = kommentarId ? "kommentar" : "opslag";
+      const type = kommentarId
+        ? "kommentar"
+        : bidragId
+          ? "'Jeg har lavet den'-bidrag"
+          : "opslag";
       const emne = kort(o.titel.replace(/[\r\n]+/g, " "), 80);
 
       const transport = nodemailer.createTransport({
@@ -143,13 +187,14 @@ export async function POST(request: NextRequest) {
         to: ANMELD_TIL,
         subject: `Anmeldelse af ${type}: ${emne}`,
         text: [
-          `Der er anmeldt en ${type} på Det Kreative Forum.`,
+          `Der er anmeldt et ${type} på Det Kreative Forum.`,
           "",
           `Opslagets overskrift: ${o.titel}`,
           `Skrevet af: ${forfatter}`,
           "",
           "Indhold:",
           kort(indhold, 1500) || "(ingen tekst)",
+          ...(billedLink ? ["", `Billede: ${billedLink}`] : []),
           "",
           "Årsag til anmeldelsen:",
           aarsag,

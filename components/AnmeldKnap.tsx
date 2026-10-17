@@ -9,9 +9,11 @@ type Status = "ukendt" | "ind" | "ud";
 export default function AnmeldKnap({
   opslagId,
   kommentarId,
+  bidragId,
 }: {
   opslagId: string;
   kommentarId?: string;
+  bidragId?: string;
 }) {
   const [status, setStatus] = useState<Status>("ukendt");
   const [aaben, setAaben] = useState(false);
@@ -20,7 +22,12 @@ export default function AnmeldKnap({
   const [fejl, setFejl] = useState<string | null>(null);
   const [besked, setBesked] = useState<string | null>(null);
 
-  const hvad = kommentarId ? "kommentaren" : "opslaget";
+  const hvad = kommentarId
+    ? "kommentaren"
+    : bidragId
+      ? "bidraget"
+      : "opslaget";
+  const feltId = `aarsag-${bidragId ?? kommentarId ?? opslagId}`;
 
   useEffect(() => {
     try {
@@ -55,6 +62,7 @@ export default function AnmeldKnap({
         body: JSON.stringify({
           opslagId,
           kommentarId: kommentarId ?? null,
+          bidragId: bidragId ?? null,
           aarsag: aarsag.trim(),
         }),
       });
@@ -86,17 +94,18 @@ export default function AnmeldKnap({
 
   if (status === "ud") {
     return (
-      <Link
-        href="/login"
-        className="text-sm underline underline-offset-4"
-      >
+      <Link href="/login" className="text-sm underline underline-offset-4">
         Log ind for at anmelde
       </Link>
     );
   }
 
   if (besked) {
-    return <p className="text-sm" role="status">{besked}</p>;
+    return (
+      <p className="text-sm" role="status">
+        {besked}
+      </p>
+    );
   }
 
   if (!aaben) {
@@ -116,11 +125,11 @@ export default function AnmeldKnap({
       onSubmit={send}
       className="mt-2 space-y-2 rounded-xl bg-green-50 p-3 ring-1 ring-green-200"
     >
-      <label htmlFor={`aarsag-${kommentarId ?? opslagId}`} className="block text-sm font-medium">
+      <label htmlFor={feltId} className="block text-sm font-medium">
         Hvorfor anmelder du {hvad}?
       </label>
       <textarea
-        id={`aarsag-${kommentarId ?? opslagId}`}
+        id={feltId}
         rows={3}
         maxLength={1000}
         value={aarsag}
