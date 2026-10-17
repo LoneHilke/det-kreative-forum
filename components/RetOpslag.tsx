@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { createClient } from "../utils/supabase/client";
 import { hovedkategorier } from "../data/kategorier";
+import { BILLED_BUCKET, MAKS_BILLEDER, uploadBilleder } from "../utils/billede";
+import BilledVaelger from "./BilledVaelger";
 
 const niveauer = [
   { vaerdi: "", navn: "Ikke angivet" },
@@ -32,6 +34,13 @@ type Raekke = {
   forfatter_id: string;
 };
 
+type Billede = {
+  id: string;
+  sti: string;
+  raekkefoelge: number;
+  url: string;
+};
+
 const feltStil =
   "mt-1 w-full rounded-xl border border-green-300 bg-white px-4 py-3 text-base";
 
@@ -44,8 +53,17 @@ export default function RetOpslag({ opslagId }: { opslagId: string }) {
   const [niveau, setNiveau] = useState("");
   const [godMedBoern, setGodMedBoern] = useState(false);
   const [erSpoergsmaal, setErSpoergsmaal] = useState(false);
+  const [eksisterende, setEksisterende] = useState<Billede[]>([]);
+  const [fjernede, setFjernede] = useState<string[]>([]);
+  const [nye, setNye] = useState<File[]>([]);
+  const [erEjer, setErEjer] = useState(false);
+  const [brugerId, setBrugerId] = useState<string | null>(null);
   const [fejl, setFejl] = useState<string | null>(null);
+  const [delvist, setDelvist] = useState<string | null>(null);
   const [gemmer, setGemmer] = useState(false);
+
+  const tilbage = eksisterende.length - fjernede.length;
+  const plads = Math.max(0, MAKS_BILLEDER - tilbage);
 
   useEffect(() => {
     let afbrudt = false;
@@ -76,7 +94,8 @@ export default function RetOpslag({ opslagId }: { opslagId: string }) {
         }
 
         const r = data as unknown as Raekke;
-        let maaRette = r.forfatter_id === bruger.id;
+        const ejer = r.forfatter_id === bruger.id;
+        let maaRette = ejer;
         if (!maaRette) {
           const { data: admin } = await supabase.rpc("er_admin");
           maaRette = admin === true;
@@ -87,6 +106,30 @@ export default function RetOpslag({ opslagId }: { opslagId: string }) {
           return;
         }
 
+        const { data: billedData, error: billedFejl } = await supabase
+          .from("opslag_billeder")
+          .select("id, sti, raekkefoelge")
+          .eq("opslag_id", opslagId)
+          .order("raekkefoelge", { ascending: true })
+          .order("oprettet", { ascending: true });
+        if (billedFejl) throw billedFejl;
+        if (afbrudt) return;
+
+        setEksisterende(
+          ((billedData ?? []) as unknown as {
+            id: string;
+            sti: string;
+            raekkefoelge: number | string;
+          }[]).map((b) => ({
+            id: b.id,
+            sti: b.sti,
+            raekkefoelge: Number(b.raekkefoelge),
+            url: supabase.storage.from(BILLED_BUCKET).getPublicUrl(b.sti).data
+              .publicUrl,
+          }))
+        );
+        setErEjer(ejer);
+        setBrugerId(bruger.id);
         setTitel(r.titel);
         setTekst(r.tekst);
         setValgte(r.kategorier);
@@ -114,6 +157,21 @@ export default function RetOpslag({ opslagId }: { opslagId: string }) {
     );
   }
 
+  function skiftFjern(id: string) {
+    setFejl(null);
+    if (fjernede.includes(id)) {
+      if (tilbage + 1 + nye.length > MAKS_BILLEDER) {
+        setFejl(
+          `Der er ikke plads til flere end ${MAKS_BILLEDER} billeder. Fjern et af de nye billeder først.`
+        );
+        return;
+      }
+      setFjernede((f) => f.filter((x) => x !== id));
+    } else {
+      setFjernede((f) => [...f, id]);
+    }
+  }
+
   async function gem(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setFejl(null);
@@ -126,10 +184,16 @@ export default function RetOpslag({ opslagId }: { opslagId: string }) {
       setFejl("Du kan højst vælge 10 underkategorier.");
       return;
     }
+    if (tilbage + nye.length > MAKS_BILLEDER) {
+      setFejl(`Et opslag kan højst have ${MAKS_BILLEDER} billeder.`);
+      return;
+    }
 
     setGemmer(true);
     try {
       const supabase = createClient();
+
+      // 1. Gem teksten og valgene
       const { data, error } = await supabase
         .from("opslag")
         .update({
@@ -153,6 +217,61 @@ export default function RetOpslag({ opslagId }: { opslagId: string }) {
         return;
       }
 
+      // 2. Fjern billeder (filerne først, så de ikke bliver liggende)
+      const skalFjernes = eksisterende.filter((b) => fjernede.includes(b.id));
+      if (skalFjernes.length > 0) {
+        const { error: filFejl } = await supabase.storage
+          .from(BILLED_BUCKET)
+          .remove(skalFjernes.map((b) => b.sti));
+        if (filFejl) {
+          console.error(filFejl);
+          setFejl(
+            "Teksten er gemt, men billederne kunne ikke fjernes. Tryk på Gem ændringer igen om lidt."
+          );
+          return;
+        }
+        const { error: raekkeFejl } = await supabase
+          .from("opslag_billeder")
+          .delete()
+          .in(
+            "id",
+            skalFjernes.map((b) => b.id)
+          );
+        if (raekkeFejl) {
+          console.error(raekkeFejl);
+          setFejl(
+            "Teksten er gemt, men billederne kunne ikke fjernes. Tryk på Gem ændringer igen om lidt."
+          );
+          return;
+        }
+      }
+
+      // 3. Tilføj nye billeder (kun ejeren kan)
+      if (nye.length > 0 && erEjer && brugerId) {
+        const beholdt = eksisterende.filter((b) => !fjernede.includes(b.id));
+        const start =
+          beholdt.length > 0
+            ? Math.max(...beholdt.map((b) => b.raekkefoelge)) + 1
+            : 0;
+        const resultat = await uploadBilleder(
+          supabase,
+          brugerId,
+          opslagId,
+          nye,
+          start
+        );
+        if (resultat.fejl) {
+          setDelvist(
+            `Dine ændringer er gemt, men ${resultat.fejl} ${
+              resultat.lykkedes > 0
+                ? `${resultat.lykkedes} af billederne blev lagt op.`
+                : ""
+            }`
+          );
+          return;
+        }
+      }
+
       router.push(`/opslag/${opslagId}`);
       router.refresh();
     } catch (err) {
@@ -165,6 +284,29 @@ export default function RetOpslag({ opslagId }: { opslagId: string }) {
 
   if (status === "henter") {
     return <p className="mt-8 text-center">Et øjeblik...</p>;
+  }
+
+  if (delvist) {
+    return (
+      <section className="mt-8 rounded-2xl bg-white p-8 text-center ring-1 ring-green-200">
+        <p className="text-lg leading-relaxed">{delvist}</p>
+        <div className="mt-5 flex flex-wrap justify-center gap-3">
+          <Link
+            href={`/opslag/${opslagId}`}
+            className="rounded-xl bg-green-700 px-5 py-3 font-semibold text-white hover:bg-green-800"
+          >
+            Se opslaget
+          </Link>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="rounded-xl bg-green-100 px-5 py-3 font-semibold hover:bg-green-200"
+          >
+            Ret igen
+          </button>
+        </div>
+      </section>
+    );
   }
 
   if (status !== "klar") {
@@ -227,6 +369,64 @@ export default function RetOpslag({ opslagId }: { opslagId: string }) {
           className={feltStil}
         />
       </div>
+
+      {eksisterende.length > 0 && (
+        <div>
+          <p className="font-medium">Billeder på opslaget</p>
+          <ul className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {eksisterende.map((b, i) => {
+              const fjernet = fjernede.includes(b.id);
+              return (
+                <li
+                  key={b.id}
+                  className="rounded-xl bg-white p-2 ring-1 ring-green-200"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={b.url}
+                    alt={`Billede ${i + 1}`}
+                    className={`aspect-square w-full rounded-lg object-cover ${
+                      fjernet ? "opacity-40" : ""
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => skiftFjern(b.id)}
+                    className="mt-2 w-full text-sm underline underline-offset-4"
+                  >
+                    {fjernet ? "Fortryd" : "Fjern"}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="mt-2 text-sm text-green-900">
+            Billeder, du fjerner, bliver først slettet, når du trykker på Gem
+            ændringer.
+          </p>
+        </div>
+      )}
+
+      {erEjer ? (
+        plads > 0 ? (
+          <BilledVaelger
+            filer={nye}
+            onAendr={setNye}
+            maks={plads}
+            titel={`Tilføj billeder (der er plads til ${plads} mere)`}
+          />
+        ) : (
+          <p className="rounded-xl bg-green-100 p-3 text-sm">
+            Opslaget har {MAKS_BILLEDER} billeder, som er det højeste. Fjern et,
+            hvis du vil tilføje et nyt.
+          </p>
+        )
+      ) : (
+        <p className="rounded-xl bg-green-100 p-3 text-sm">
+          Som administrator kan du fjerne billeder på andres opslag, men ikke
+          tilføje nye.
+        </p>
+      )}
 
       <label className="flex items-start gap-3 rounded-2xl bg-white p-4 ring-1 ring-green-200">
         <input

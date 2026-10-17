@@ -14,10 +14,12 @@ export default function BilledVaelger({
   filer,
   onAendr,
   maks,
+  titel,
 }: {
   filer: File[];
   onAendr: (filer: File[]) => void;
   maks: number;
+  titel?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [besked, setBesked] = useState<string | null>(null);
@@ -50,7 +52,9 @@ export default function BilledVaelger({
 
   return (
     <div>
-      <p className="font-medium">Billeder (valgfrit, op til {maks})</p>
+      <p className="font-medium">
+        {titel ?? `Billeder (valgfrit, op til ${maks})`}
+      </p>
       <p className="text-sm text-green-900">
         Billederne gøres automatisk mindre. Alle kan se dem, også uden login, så
         vis kun ansigter, når det er ansigtsmaling.
