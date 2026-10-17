@@ -96,3 +96,23 @@ export async function uploadBilleder(
 
   return { lykkedes, fejl: null };
 }
+
+export async function uploadEnkeltBillede(
+  supabase: Klient,
+  brugerId: string,
+  opslagId: string,
+  fil: File
+): Promise<string> {
+  const blob = await formindsk(fil);
+  const sti = `${brugerId}/${opslagId}/${crypto.randomUUID()}.jpg`;
+
+  const { error } = await supabase.storage
+    .from(BILLED_BUCKET)
+    .upload(sti, blob, {
+      contentType: "image/jpeg",
+      cacheControl: "31536000",
+    });
+  if (error) throw error;
+
+  return sti;
+}

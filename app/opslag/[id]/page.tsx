@@ -7,6 +7,8 @@ import Kommentarer from "../../../components/Kommentarer";
 import AnmeldKnap from "../../../components/AnmeldKnap";
 import OpslagHandlinger from "../../../components/OpslagHandlinger";
 import Reaktioner from "../../../components/Reaktioner";
+import LavetDen from "../../../components/LavetDen";
+import LavetDenListe from "../../../components/LavetDenListe";
 import { BILLED_BUCKET } from "../../../utils/billede";
 
 const niveauNavne: Record<string, string> = {
@@ -190,6 +192,12 @@ async function OpslagIndhold({ params }: { params: Promise<{ id: string }> }) {
       )}
 
       <Reaktioner opslagId={o.id} />
+
+      <LavetDen opslagId={o.id} />
+
+      <Suspense fallback={null}>
+        <LavetDenListe opslagId={o.id} />
+      </Suspense>
 
       {kategorier.length > 0 && (
         <div className="mt-6">

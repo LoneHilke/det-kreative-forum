@@ -48,10 +48,10 @@ export default function OpslagHandlinger({
     };
   }, [forfatterId]);
 
-  async function slet() {
+    async function slet() {
     if (
       !window.confirm(
-        "Vil du slette opslaget? Billeder, kommentarer og anmeldelser under det bliver også slettet. Det kan ikke fortrydes."
+        "Vil du slette opslaget? Billeder, kommentarer, anmeldelser og andres 'Jeg har lavet den'-bidrag under det bliver også slettet. Det kan ikke fortrydes."
       )
     ) {
       return;
@@ -62,14 +62,25 @@ export default function OpslagHandlinger({
     try {
       const supabase = createClient();
 
-      // Slet billedfilerne først, så de ikke ligger tilbage og fylder.
-      const { data: billeder, error: hentFejl } = await supabase
-        .from("opslag_billeder")
-        .select("sti")
-        .eq("opslag_id", opslagId);
+      // Slet billedfilerne først (også dem, andre har lagt under opslaget)
+      const [
+        { data: billeder, error: hentFejl },
+        { data: bidrag, error: bidragFejl },
+      ] = await Promise.all([
+        supabase.from("opslag_billeder").select("sti").eq("opslag_id", opslagId),
+        supabase
+          .from("har_lavet_den")
+          .select("sti")
+          .eq("opslag_id", opslagId)
+          .not("sti", "is", null),
+      ]);
       if (hentFejl) throw hentFejl;
+      if (bidragFejl) throw bidragFejl;
 
-      const stier = (billeder ?? []).map((b) => b.sti as string);
+      const stier = [...(billeder ?? []), ...(bidrag ?? [])]
+        .map((b) => b.sti as string | null)
+        .filter((s): s is string => !!s);
+
       if (stier.length > 0) {
         const { data: fjernet, error: fjernFejl } = await supabase.storage
           .from(BILLED_BUCKET)
