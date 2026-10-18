@@ -105,7 +105,7 @@ export default function KommentarFormular({ opslagId }: { opslagId: string }) {
       <p className="text-sm text-green-900">
         Vil du spørge en bestemt person, kan du skrive @ og navnet, fx @Lone.
         Navnet bliver fremhævet, men personen får ikke besked, så kig gerne
-        tilbage senere.
+        tilbage senere. Skriv ikke din adresse, e-mail eller andre private oplysninger her, for alle kan læse det, og det er på eget ansvar.
       </p>
 
       {fejl && (
