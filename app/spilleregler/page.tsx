@@ -54,10 +54,24 @@ export default function Spilleregler() {
         </section>
 
         <section className="mt-4 rounded-2xl bg-white p-6 ring-1 ring-green-200">
+          <h2 className="text-xl font-semibold">🔒 Skriv ikke private oplysninger</h2>
+          <p className="mt-2 leading-relaxed">
+            Alt, du lægger op, kan ses af alle. Skriver du din adresse, e-mail,
+            dit telefonnummer eller andre private oplysninger i et opslag, en
+            kommentar eller på et billede, er det på eget ansvar.
+          </p>
+        </section>
+
+        <section className="mt-4 rounded-2xl bg-white p-6 ring-1 ring-green-200">
           <h2 className="text-xl font-semibold">👀 Alle kan se det, du deler</h2>
           <p className="mt-2 leading-relaxed">
             Opslag, kommentarer og dit navn kan ses af alle på internettet,
-            også uden login, og kan dukke op i søgemaskiner som Google.
+            også uden login, og kan dukke op i søgemaskiner som Google. Du kan
+            læse mere i vores{" "}
+            <Link href="/privatliv" className="underline underline-offset-4">
+              privatlivspolitik
+            </Link>
+            .
           </p>
         </section>
 
@@ -66,7 +80,9 @@ export default function Spilleregler() {
           <p className="mt-2 leading-relaxed">
             Er der noget, der ikke hører hjemme, kan man anmelde det.
             Ophavspersonen får først mulighed for selv at rette eller fjerne
-            det, og hvis det ikke sker, kan administrator gribe ind.
+            det, og hvis det ikke sker, kan administrator gribe ind. Det kan
+            ske, at administrator skriver til den e-mail, der hører til
+            brugeren.
           </p>
         </section>
 

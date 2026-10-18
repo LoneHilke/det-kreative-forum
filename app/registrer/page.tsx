@@ -86,18 +86,29 @@ export default function Registrer() {
         <div className="mt-5 rounded-2xl bg-green-100 p-4 text-sm leading-relaxed">
           <p className="font-semibold">Det er godt at vide, før du opretter dig</p>
           <ul className="mt-2 list-disc space-y-1 pl-5">
-            <li>Din e-mail bruges kun til at logge ind.</li>
+              <li>Din e-mail bruges til at logge ind og til at kontakte dig, hvis dit indhold
+                  bliver anmeldt. Den vises ikke for andre.
+              </li>
             <li>Dit navn vises ved de opslag og kommentarer, du skriver.</li>
             <li>
               Opslag, kommentarer og navne kan ses af alle på internettet,
               også uden login, og kan dukke op i Google.
             </li>
-            <li>Din fødselsdato bruges kun til alderstjekket og gemmes ikke.</li>
+              <li>Din fødselsdato bruges kun til alderstjekket og gemmes ikke.</li>
+              <li>
+                Skriver du selv din adresse, e-mail eller andre private oplysninger i
+                opslag eller kommentarer, er det på eget ansvar.
+              </li>
           </ul>
           <p className="mt-2">
             <Link href="/spilleregler" className="underline underline-offset-4">
               Læs vores kreative spilleregler
             </Link>
+              {" "}
+              ·{" "}
+              <Link href="/privatliv" className="underline underline-offset-4">
+                Privatlivspolitik
+              </Link>
           </p>
         </div>
 

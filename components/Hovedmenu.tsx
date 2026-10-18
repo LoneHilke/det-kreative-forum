@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "../utils/supabase/client";
 
@@ -16,7 +15,6 @@ const punktStil =
   "flex flex-col items-center gap-0.5 rounded-lg px-1.5 py-2 text-xs font-medium whitespace-nowrap text-green-950 transition hover:bg-green-200 sm:flex-row sm:gap-2 sm:px-3 sm:text-base";
 
 export default function Hovedmenu() {
-  const router = useRouter();
   const [loggetInd, setLoggetInd] = useState(false);
 
   useEffect(() => {
@@ -40,19 +38,6 @@ export default function Hovedmenu() {
     return () => afmeld?.();
   }, []);
 
-  async function logUd() {
-    try {
-      const supabase = createClient();
-      // Logger kun ud på denne enhed.
-      await supabase.auth.signOut({ scope: "local" });
-    } catch (fejl) {
-      console.error(fejl);
-    }
-    setLoggetInd(false);
-    router.push("/");
-    router.refresh();
-  }
-
   return (
     <nav
       aria-label="Hovedmenu"
@@ -70,21 +55,15 @@ export default function Hovedmenu() {
           </li>
         ))}
         <li>
-          {loggetInd ? (
-            <button type="button" onClick={logUd} className={punktStil}>
-              <span className="text-xl" aria-hidden="true">
-                👤
-              </span>
-              <span>Log ud</span>
-            </button>
-          ) : (
-            <Link href="/login" className={punktStil}>
-              <span className="text-xl" aria-hidden="true">
-                👤
-              </span>
-              <span>Login</span>
-            </Link>
-          )}
+          <Link
+            href={loggetInd ? "/min-side" : "/login"}
+            className={punktStil}
+          >
+            <span className="text-xl" aria-hidden="true">
+              👤
+            </span>
+            <span>{loggetInd ? "Min side" : "Login"}</span>
+          </Link>
         </li>
       </ul>
     </nav>

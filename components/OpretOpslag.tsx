@@ -317,7 +317,7 @@ export default function OpretOpslag({
 
       <p className="rounded-xl bg-green-100 p-3 text-sm leading-relaxed">
         Opslaget vises med det samme, og dit navn står ved det. Alle kan se det,
-        også uden login.
+        også uden login. Skriv ikke din adresse, e-mail eller andre private oplysninger her, det er på eget ansvar.
       </p>
 
       {fejl && (
