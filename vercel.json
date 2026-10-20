@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/hold-vaagen",
+      "schedule": "17 5 * * *"
+    }
+  ]
+}

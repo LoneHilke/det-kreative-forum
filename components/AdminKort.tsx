@@ -208,7 +208,10 @@ export default function AdminKort({ sag }: { sag: AdminSag }) {
       </div>
 
       <h2 className="mt-3 text-lg font-semibold">{sag.opslagTitel}</h2>
-      <p className="text-sm text-green-900">Skrevet af {sag.forfatter}</p>
+      <p className="text-sm text-green-900">
+        Skrevet af {sag.forfatter}
+        {sag.ejerEmail ? ` · ${sag.ejerEmail}` : ""}
+      </p>
 
       {sag.billedUrl && (
         <a
