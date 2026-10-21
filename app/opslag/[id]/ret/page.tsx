@@ -2,6 +2,10 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import RetOpslag from "../../../../components/RetOpslag";
+import {
+  hentKategorier,
+  type Hovedkategori,
+} from "../../../../utils/kategorier";
 
 const uuidMoenster =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -29,6 +33,18 @@ async function RetIndhold({ params }: { params: Promise<{ id: string }> }) {
     notFound();
   }
 
+  let kategorier: Hovedkategori[] = [];
+  try {
+    kategorier = await hentKategorier();
+  } catch (err) {
+    console.error(err);
+    return (
+      <p className="rounded-2xl bg-white p-6 text-center ring-1 ring-green-200">
+        Kategorierne kunne ikke hentes lige nu. Prøv igen om lidt.
+      </p>
+    );
+  }
+
   return (
     <>
       <Link
@@ -38,7 +54,7 @@ async function RetIndhold({ params }: { params: Promise<{ id: string }> }) {
         ← Tilbage til opslaget
       </Link>
       <h1 className="mt-6 text-3xl font-bold sm:text-4xl">Ret opslag</h1>
-      <RetOpslag opslagId={id} />
+      <RetOpslag opslagId={id} kategorier={kategorier} />
     </>
   );
 }

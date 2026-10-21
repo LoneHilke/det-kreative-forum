@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { createClient } from "../../utils/supabase/server";
-import { hovedkategorier } from "../../data/kategorier";
+import { hentKategorier, type Hovedkategori } from "../../utils/kategorier";
 
 const niveauNavne: Record<string, string> = {
   startprojekt: "Startprojekt",
@@ -36,22 +36,18 @@ function normaliser(tekst: string) {
     .normalize("NFC");
 }
 
-function kategorierForOrd(ord: string): string[] {
+// Finder de underkategorier, hvis navn (eller hovedkategoriens navn) starter med ordet
+function kategorierForOrd(ord: string, kategorier: Hovedkategori[]): string[] {
   const o = normaliser(ord);
   if (o.length < 3) return [];
 
   const fundet: string[] = [];
-  for (const hoved of hovedkategorier) {
-    const hovedNavn = normaliser(hoved.navn);
-    if (hovedNavn.startsWith(o)) {
-      for (const under of hoved.underkategorier) {
-        fundet.push(`${hoved.slug}/${under.slug}`);
-      }
+  for (const hoved of kategorier) {
+    if (normaliser(hoved.navn).startsWith(o)) {
+      for (const under of hoved.underkategorier) fundet.push(under.slug);
     }
     for (const under of hoved.underkategorier) {
-      if (normaliser(under.navn).startsWith(o)) {
-        fundet.push(`${hoved.slug}/${under.slug}`);
-      }
+      if (normaliser(under.navn).startsWith(o)) fundet.push(under.slug);
     }
   }
   return [...new Set(fundet)];
@@ -145,9 +141,16 @@ async function Resultater({
     );
   }
 
+  let kategorier: Hovedkategori[] = [];
+  try {
+    kategorier = await hentKategorier();
+  } catch (err) {
+    console.error(err);
+  }
+
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("soeg_opslag", {
-    p_soeg: ord.map((o) => ({ ord: o, kat: kategorierForOrd(o) })),
+    p_soeg: ord.map((o) => ({ ord: o, kat: kategorierForOrd(o, kategorier) })),
   });
 
   if (error) {

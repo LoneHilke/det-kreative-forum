@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { createClient } from "../utils/supabase/client";
-import { hovedkategorier } from "../data/kategorier";
+import type { Hovedkategori } from "../utils/kategoritype";
 import { MAKS_BILLEDER, uploadBilleder } from "../utils/billede";
 import BilledVaelger from "./BilledVaelger";
 
@@ -22,9 +22,11 @@ const feltStil =
 export default function OpretOpslag({
   forvalgt,
   tilbageLink,
+  kategorier,
 }: {
   forvalgt: string;
   tilbageLink: string;
+  kategorier: Hovedkategori[];
 }) {
   const [status, setStatus] = useState<Status>("ukendt");
   const [titel, setTitel] = useState("");
@@ -258,29 +260,29 @@ export default function OpretOpslag({
           Hvor hører det hjemme? (vælg mindst én)
         </legend>
         <div className="mt-2 space-y-4 rounded-2xl bg-white p-4 ring-1 ring-green-200">
-          {hovedkategorier.map((hoved) => (
+          {kategorier.map((hoved) => (
             <div key={hoved.slug}>
               <p className="font-semibold">
-                <span aria-hidden="true">{hoved.ikon}</span> {hoved.navn}
+                <span aria-hidden="true">
+                  {hoved.ikon.startsWith("@") ? "" : hoved.ikon}
+                </span>{" "}
+                {hoved.navn}
               </p>
               <div className="mt-1 flex flex-wrap gap-x-5 gap-y-1">
-                {hoved.underkategorier.map((under) => {
-                  const vaerdi = `${hoved.slug}/${under.slug}`;
-                  return (
-                    <label
-                      key={vaerdi}
-                      className="flex items-center gap-2 py-1"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={valgte.includes(vaerdi)}
-                        onChange={() => skiftKategori(vaerdi)}
-                        className="h-5 w-5"
-                      />
-                      {under.navn}
-                    </label>
-                  );
-                })}
+                {hoved.underkategorier.map((under) => (
+                  <label
+                    key={under.slug}
+                    className="flex items-center gap-2 py-1"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={valgte.includes(under.slug)}
+                      onChange={() => skiftKategori(under.slug)}
+                      className="h-5 w-5"
+                    />
+                    {under.navn}
+                  </label>
+                ))}
               </div>
             </div>
           ))}
@@ -317,7 +319,8 @@ export default function OpretOpslag({
 
       <p className="rounded-xl bg-green-100 p-3 text-sm leading-relaxed">
         Opslaget vises med det samme, og dit navn står ved det. Alle kan se det,
-        også uden login. Skriv ikke din adresse, e-mail eller andre private oplysninger her, det er på eget ansvar.
+        også uden login. Skriv ikke din adresse, e-mail eller andre private
+        oplysninger her, det er på eget ansvar.
       </p>
 
       {fejl && (

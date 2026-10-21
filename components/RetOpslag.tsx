@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { createClient } from "../utils/supabase/client";
-import { hovedkategorier } from "../data/kategorier";
+import type { Hovedkategori } from "../utils/kategoritype";
 import { BILLED_BUCKET, MAKS_BILLEDER, uploadBilleder } from "../utils/billede";
 import BilledVaelger from "./BilledVaelger";
 
@@ -44,7 +44,13 @@ type Billede = {
 const feltStil =
   "mt-1 w-full rounded-xl border border-green-300 bg-white px-4 py-3 text-base";
 
-export default function RetOpslag({ opslagId }: { opslagId: string }) {
+export default function RetOpslag({
+  opslagId,
+  kategorier,
+}: {
+  opslagId: string;
+  kategorier: Hovedkategori[];
+}) {
   const router = useRouter();
   const [status, setStatus] = useState<Status>("henter");
   const [titel, setTitel] = useState("");
@@ -116,11 +122,13 @@ export default function RetOpslag({ opslagId }: { opslagId: string }) {
         if (afbrudt) return;
 
         setEksisterende(
-          ((billedData ?? []) as unknown as {
-            id: string;
-            sti: string;
-            raekkefoelge: number | string;
-          }[]).map((b) => ({
+          (
+            (billedData ?? []) as unknown as {
+              id: string;
+              sti: string;
+              raekkefoelge: number | string;
+            }[]
+          ).map((b) => ({
             id: b.id,
             sti: b.sti,
             raekkefoelge: Number(b.raekkefoelge),
@@ -448,29 +456,29 @@ export default function RetOpslag({ opslagId }: { opslagId: string }) {
           Hvor hører det hjemme? (vælg mindst én)
         </legend>
         <div className="mt-2 space-y-4 rounded-2xl bg-white p-4 ring-1 ring-green-200">
-          {hovedkategorier.map((hoved) => (
+          {kategorier.map((hoved) => (
             <div key={hoved.slug}>
               <p className="font-semibold">
-                <span aria-hidden="true">{hoved.ikon}</span> {hoved.navn}
+                <span aria-hidden="true">
+                  {hoved.ikon.startsWith("@") ? "" : hoved.ikon}
+                </span>{" "}
+                {hoved.navn}
               </p>
               <div className="mt-1 flex flex-wrap gap-x-5 gap-y-1">
-                {hoved.underkategorier.map((under) => {
-                  const vaerdi = `${hoved.slug}/${under.slug}`;
-                  return (
-                    <label
-                      key={vaerdi}
-                      className="flex items-center gap-2 py-1"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={valgte.includes(vaerdi)}
-                        onChange={() => skiftKategori(vaerdi)}
-                        className="h-5 w-5"
-                      />
-                      {under.navn}
-                    </label>
-                  );
-                })}
+                {hoved.underkategorier.map((under) => (
+                  <label
+                    key={under.slug}
+                    className="flex items-center gap-2 py-1"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={valgte.includes(under.slug)}
+                      onChange={() => skiftKategori(under.slug)}
+                      className="h-5 w-5"
+                    />
+                    {under.navn}
+                  </label>
+                ))}
               </div>
             </div>
           ))}

@@ -2,7 +2,10 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { createClient } from "../../../utils/supabase/server";
-import { hovedkategorier } from "../../../data/kategorier";
+import {
+  hentKategorier,
+  type Hovedkategori,
+} from "../../../utils/kategorier";
 import Kommentarer from "../../../components/Kommentarer";
 import AnmeldKnap from "../../../components/AnmeldKnap";
 import OpslagHandlinger from "../../../components/OpslagHandlinger";
@@ -42,15 +45,17 @@ function dansk(dato: string) {
   });
 }
 
-function findKategori(vaerdi: string) {
-  const [hovedSlug, underSlug] = vaerdi.split("/");
-  const hoved = hovedkategorier.find((h) => h.slug === hovedSlug);
-  const under = hoved?.underkategorier.find((u) => u.slug === underSlug);
-  if (!hoved || !under) return null;
-  return {
-    link: `/kategori/${hoved.slug}/${under.slug}`,
-    navn: `${hoved.navn} → ${under.navn}`,
-  };
+function findKategori(alle: Hovedkategori[], slug: string) {
+  for (const hoved of alle) {
+    const under = hoved.underkategorier.find((u) => u.slug === slug);
+    if (under) {
+      return {
+        link: `/kategori/${hoved.slug}/${under.slug}`,
+        navn: `${hoved.navn} → ${under.navn}`,
+      };
+    }
+  }
+  return null;
 }
 
 export default function OpslagSide({
@@ -107,23 +112,33 @@ async function OpslagIndhold({ params }: { params: Promise<{ id: string }> }) {
     .order("raekkefoelge", { ascending: true })
     .order("oprettet", { ascending: true });
 
-  const billeder = ((billedData ?? []) as unknown as { id: string; sti: string }[]).map(
-    (b) => ({
-      id: b.id,
-      url: supabase.storage.from(BILLED_BUCKET).getPublicUrl(b.sti).data
-        .publicUrl,
-    })
-  );
+  const billeder = (
+    (billedData ?? []) as unknown as { id: string; sti: string }[]
+  ).map((b) => ({
+    id: b.id,
+    url: supabase.storage.from(BILLED_BUCKET).getPublicUrl(b.sti).data
+      .publicUrl,
+  }));
+
+  let alleKategorier: Hovedkategori[] = [];
+  try {
+    alleKategorier = await hentKategorier();
+  } catch (err) {
+    console.error(err);
+  }
 
   const kategorier = o.kategorier
-    .map(findKategori)
+    .map((slug) => findKategori(alleKategorier, slug))
     .filter((k): k is { link: string; navn: string } => k !== null);
   const foerste = kategorier[0];
   const tilbageLink = foerste ? foerste.link : "/";
 
   return (
     <article>
-      <Link href={tilbageLink} className="font-medium underline underline-offset-4">
+      <Link
+        href={tilbageLink}
+        className="font-medium underline underline-offset-4"
+      >
         ← Tilbage
       </Link>
 

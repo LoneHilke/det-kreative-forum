@@ -1,66 +1,96 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { notFound } from "next/navigation";
-import { hovedkategorier } from "../../../../data/kategorier";
+import { notFound, redirect } from "next/navigation";
+import {
+  hentKategorier,
+  type Hovedkategori,
+} from "../../../../utils/kategorier";
 import OpslagListe from "../../../../components/OpslagListe";
+import KategoriIkon from "../../../../components/KategoriIkon";
 
-export function generateStaticParams() {
-  return hovedkategorier.flatMap((hoved) =>
-    hoved.underkategorier.map((under) => ({
-      slug: hoved.slug,
-      underslug: under.slug,
-    }))
+export default function Underkategoriside({
+  params,
+}: {
+  params: Promise<{ slug: string; underslug: string }>;
+}) {
+  return (
+    <main className="min-h-screen bg-green-50 text-green-950">
+      <div className="mx-auto max-w-3xl px-5 py-10">
+        <Suspense fallback={<p className="text-center">Henter...</p>}>
+          <UnderIndhold params={params} />
+        </Suspense>
+      </div>
+    </main>
   );
 }
 
-export default async function Underkategoriside({
+async function UnderIndhold({
   params,
 }: {
   params: Promise<{ slug: string; underslug: string }>;
 }) {
   const { slug, underslug } = await params;
-  const hoved = hovedkategorier.find((k) => k.slug === slug);
-  const under = hoved?.underkategorier.find((u) => u.slug === underslug);
 
-  if (!hoved || !under) {
+  let kategorier: Hovedkategori[] = [];
+  try {
+    kategorier = await hentKategorier();
+  } catch (err) {
+    console.error(err);
+    return (
+      <p className="rounded-2xl bg-white p-6 text-center ring-1 ring-green-200">
+        Kategorierne kunne ikke hentes lige nu. Prøv igen om lidt.
+      </p>
+    );
+  }
+
+  const fundet = kategorier
+    .flatMap((h) => h.underkategorier.map((u) => ({ hoved: h, under: u })))
+    .find((x) => x.under.slug === underslug);
+
+  if (!fundet) {
     notFound();
   }
 
+  // Er underkategorien flyttet, sendes man videre til den nye adresse
+  if (fundet.hoved.slug !== slug) {
+    redirect(`/kategori/${fundet.hoved.slug}/${fundet.under.slug}`);
+  }
+
+  const { hoved, under } = fundet;
+
   return (
-    <main className="min-h-screen bg-green-50 text-green-950">
-      <div className="mx-auto max-w-3xl px-5 py-10">
+    <>
+      <Link
+        href={`/kategori/${hoved.slug}`}
+        className="font-medium underline underline-offset-4"
+      >
+        ← Tilbage til {hoved.navn}
+      </Link>
+
+      <section className="mt-6 text-center">
+        <span
+          className="flex h-16 items-center justify-center text-6xl"
+          aria-hidden="true"
+        >
+          <KategoriIkon ikon={under.ikon} />
+        </span>
+        <h1 className="mt-3 text-3xl font-bold sm:text-4xl">{under.navn}</h1>
+      </section>
+
+      <div className="mt-8 text-center">
         <Link
-          href={`/kategori/${hoved.slug}`}
-          className="font-medium underline underline-offset-4"
+          href={`/kategori/${hoved.slug}/${under.slug}/nyt`}
+          className="inline-block rounded-xl bg-green-700 px-5 py-3 font-semibold text-white transition hover:bg-green-800"
         >
-          ← Tilbage til {hoved.navn}
+          ✏️ Lav et opslag
         </Link>
-
-        <section className="mt-6 text-center">
-          <span
-            className="flex h-16 items-center justify-center text-6xl"
-            aria-hidden="true"
-          >
-            {under.ikon}
-          </span>
-          <h1 className="mt-3 text-3xl font-bold sm:text-4xl">{under.navn}</h1>
-        </section>
-
-        <div className="mt-8 text-center">
-          <Link
-            href={`/kategori/${hoved.slug}/${under.slug}/nyt`}
-            className="inline-block rounded-xl bg-green-700 px-5 py-3 font-semibold text-white transition hover:bg-green-800"
-          >
-            ✏️ Lav et opslag
-          </Link>
-        </div>
-
-        <Suspense
-          fallback={<p className="mt-10 text-center">Henter opslag...</p>}
-        >
-          <OpslagListe kategori={`${hoved.slug}/${under.slug}`} />
-        </Suspense>
       </div>
-    </main>
+
+      <Suspense
+        fallback={<p className="mt-10 text-center">Henter opslag...</p>}
+      >
+        <OpslagListe kategori={under.slug} />
+      </Suspense>
+    </>
   );
 }

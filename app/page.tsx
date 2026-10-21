@@ -1,12 +1,6 @@
 import Link from "next/link";
-
-const kategorier = [
-  { navn: "Garn", ikon: "🧶", link: "/kategori/garn" },
-  { navn: "Perler", ikon: "📿", link: "/kategori/perler" },
-  { navn: "Papir", ikon: "📄", link: "/kategori/papir" },
-  { navn: "Gaveidéer", ikon: "🎁", link: "/kategori/gaveideer" },
-  { navn: "Anledning", ikon: "🎉", link: "/kategori/anledninger" },
-];
+import { Suspense } from "react";
+import KategoriKort from "../components/KategoriKort";
 
 export default function Forside() {
   return (
@@ -24,22 +18,11 @@ export default function Forside() {
         </section>
 
         {/* Hovedkategorier */}
-        <section className="mt-10 grid grid-cols-2 gap-4">
-          {kategorier.map((kategori) => (
-            <Link
-              key={kategori.navn}
-              href={kategori.link}
-              className="flex flex-col last:odd:col-span-2 items-center justify-center rounded-2xl bg-white p-6 shadow-sm ring-1 ring-green-200 transition hover:bg-green-100"
-            >
-              <span className="text-5xl" aria-hidden="true">
-                {kategori.ikon}
-              </span>
-              <span className="mt-3 text-lg font-semibold">
-                {kategori.navn}
-              </span>
-            </Link>
-          ))}
-        </section>
+        <Suspense
+          fallback={<p className="mt-10 text-center">Henter kategorier...</p>}
+        >
+          <KategoriKort />
+        </Suspense>
 
         {/* Fællesskabets rammer */}
         <section className="mt-12 rounded-2xl bg-green-100 p-6">
