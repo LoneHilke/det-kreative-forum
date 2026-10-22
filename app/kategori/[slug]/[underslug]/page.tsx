@@ -2,11 +2,18 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { notFound, redirect } from "next/navigation";
 import {
+  findOmdirigering,
   hentKategorier,
   type Hovedkategori,
 } from "../../../../utils/kategorier";
 import OpslagListe from "../../../../components/OpslagListe";
 import KategoriIkon from "../../../../components/KategoriIkon";
+
+function findUnder(kategorier: Hovedkategori[], slug: string) {
+  return kategorier
+    .flatMap((h) => h.underkategorier.map((u) => ({ hoved: h, under: u })))
+    .find((x) => x.under.slug === slug);
+}
 
 export default function Underkategoriside({
   params,
@@ -43,11 +50,20 @@ async function UnderIndhold({
     );
   }
 
-  const fundet = kategorier
-    .flatMap((h) => h.underkategorier.map((u) => ({ hoved: h, under: u })))
-    .find((x) => x.under.slug === underslug);
+  const fundet = findUnder(kategorier, underslug);
 
   if (!fundet) {
+    // Er den slået sammen med en anden, sendes man videre
+    let ny: string | null = null;
+    try {
+      ny = await findOmdirigering(underslug);
+    } catch (err) {
+      console.error(err);
+    }
+    const maal = ny ? findUnder(kategorier, ny) : undefined;
+    if (maal) {
+      redirect(`/kategori/${maal.hoved.slug}/${maal.under.slug}`);
+    }
     notFound();
   }
 
@@ -91,6 +107,15 @@ async function UnderIndhold({
       >
         <OpslagListe kategori={under.slug} />
       </Suspense>
+
+      <p className="mt-10 text-center">
+        <Link
+          href={`/foreslaa/sammenlaeg?kilde=${under.slug}`}
+          className="font-medium underline underline-offset-4"
+        >
+          🔀 Foreslå at slå den sammen med en anden
+        </Link>
+      </p>
     </>
   );
 }

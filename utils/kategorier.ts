@@ -41,3 +41,18 @@ export async function hentKategorier(): Promise<Hovedkategori[]> {
       .map((u) => ({ slug: u.slug, navn: u.navn, ikon: u.ikon })),
   }));
 }
+
+// Er en underkategori slået sammen med en anden, findes den nye adresse her.
+export async function findOmdirigering(
+  gammelSlug: string
+): Promise<string | null> {
+  const supabase = opretOffentligKlient();
+  const { data, error } = await supabase
+    .from("kategori_omdirigeringer")
+    .select("ny_slug")
+    .eq("gammel_slug", gammelSlug)
+    .maybeSingle();
+
+  if (error) throw error;
+  return (data?.ny_slug as string | undefined) ?? null;
+}

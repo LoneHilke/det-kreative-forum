@@ -2,10 +2,17 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { notFound, redirect } from "next/navigation";
 import {
+  findOmdirigering,
   hentKategorier,
   type Hovedkategori,
 } from "../../../../../utils/kategorier";
 import OpretOpslag from "../../../../../components/OpretOpslag";
+
+function findUnder(kategorier: Hovedkategori[], slug: string) {
+  return kategorier
+    .flatMap((h) => h.underkategorier.map((u) => ({ hoved: h, under: u })))
+    .find((x) => x.under.slug === slug);
+}
 
 export default function NytOpslag({
   params,
@@ -42,13 +49,22 @@ async function NytIndhold({
     );
   }
 
-  const fundet = kategorier
-    .flatMap((h) => h.underkategorier.map((u) => ({ hoved: h, under: u })))
-    .find((x) => x.under.slug === underslug);
+  const fundet = findUnder(kategorier, underslug);
 
   if (!fundet) {
+    let ny: string | null = null;
+    try {
+      ny = await findOmdirigering(underslug);
+    } catch (err) {
+      console.error(err);
+    }
+    const maal = ny ? findUnder(kategorier, ny) : undefined;
+    if (maal) {
+      redirect(`/kategori/${maal.hoved.slug}/${maal.under.slug}/nyt`);
+    }
     notFound();
   }
+
   if (fundet.hoved.slug !== slug) {
     redirect(`/kategori/${fundet.hoved.slug}/${fundet.under.slug}/nyt`);
   }
