@@ -1,4 +1,5 @@
 import MinSide from "../../components/MinSide";
+import MineForslag from "../../components/MineForslag";
 
 export default function MinSideSide() {
   return (
@@ -13,6 +14,7 @@ export default function MinSideSide() {
             Her kan kun du se dine egne oplysninger.
           </p>
         </section>
+        <MineForslag />
         <MinSide />
       </div>
     </main>

@@ -77,6 +77,15 @@ async function KategoriIndhold({
           </Link>
         ))}
       </section>
+
+      <p className="mt-8 text-center">
+        <Link
+          href={`/foreslaa?hoved=${kategori.slug}`}
+          className="font-medium underline underline-offset-4"
+        >
+          💡 Foreslå en underkategori her
+        </Link>
+      </p>
     </>
   );
 }

@@ -53,7 +53,13 @@ export default function AdminSide() {
       <div className="mx-auto max-w-3xl px-5 py-10">
         <h1 className="text-3xl font-bold sm:text-4xl">Administrator</h1>
         <p className="mt-3 text-lg leading-relaxed">
-          Her kan du se anmeldelser og fjerne eller afvise dem.
+         Her kan du se anmeldelser og fjerne eller afvise dem.{" "}
+          <Link
+            href="/admin/forslag"
+            className="font-medium underline underline-offset-4"
+          >
+            Se forslag til kategorier
+          </Link>
         </p>
         <Suspense fallback={<p className="mt-8 text-center">Henter...</p>}>
           <AdminIndhold />
