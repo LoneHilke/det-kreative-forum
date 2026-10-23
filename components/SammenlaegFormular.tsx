@@ -44,6 +44,20 @@ export default function SammenlaegFormular({
     }
   }, []);
 
+  // Når man forlader siden, nulstilles tak-siden, så formularen er tom næste gang
+  useEffect(() => {
+    return () => {
+      setFaerdig(false);
+    };
+  }, []);
+
+  function nytForslag() {
+    setMaal("");
+    setBegrundelse("");
+    setFejl(null);
+    setFaerdig(false);
+  }
+
   async function send(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setFejl(null);
@@ -148,9 +162,16 @@ export default function SammenlaegFormular({
           går, under Min side.
         </p>
         <div className="mt-5 flex flex-wrap justify-center gap-3">
+          <button
+            type="button"
+            onClick={nytForslag}
+            className="rounded-xl bg-green-700 px-5 py-3 font-semibold text-white hover:bg-green-800"
+          >
+            Send et nyt forslag
+          </button>
           <Link
             href="/min-side"
-            className="rounded-xl bg-green-700 px-5 py-3 font-semibold text-white hover:bg-green-800"
+            className="rounded-xl bg-green-100 px-5 py-3 font-semibold hover:bg-green-200"
           >
             Til Min side
           </Link>

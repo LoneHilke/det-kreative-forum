@@ -56,6 +56,13 @@ export default function ForslagFormular({
     }
   }, []);
 
+  // Når man forlader siden, nulstilles tak-siden, så formularen er tom næste gang
+  useEffect(() => {
+    return () => {
+      setFaerdig(false);
+    };
+  }, []);
+
   // Tjek for lignende navne, mens man skriver
   useEffect(() => {
     const rent = navn.trim();
@@ -83,6 +90,17 @@ export default function ForslagFormular({
 
   const vis = navn.trim().length >= 2 ? lignende : [];
   const harPraecis = vis.some((l) => l.praecis);
+
+  function nytForslag() {
+    setNavn("");
+    setIkon("");
+    setIntro("");
+    setLignende([]);
+    setFejl(null);
+    setType(forvalgtHoved ? "under" : "hoved");
+    setHovedSlug(forvalgtHoved);
+    setFaerdig(false);
+  }
 
   async function send(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -191,9 +209,16 @@ export default function ForslagFormular({
           siden. Du kan se, hvordan det går, under Min side.
         </p>
         <div className="mt-5 flex flex-wrap justify-center gap-3">
+          <button
+            type="button"
+            onClick={nytForslag}
+            className="rounded-xl bg-green-700 px-5 py-3 font-semibold text-white hover:bg-green-800"
+          >
+            Send et nyt forslag
+          </button>
           <Link
             href="/min-side"
-            className="rounded-xl bg-green-700 px-5 py-3 font-semibold text-white hover:bg-green-800"
+            className="rounded-xl bg-green-100 px-5 py-3 font-semibold hover:bg-green-200"
           >
             Til Min side
           </Link>
