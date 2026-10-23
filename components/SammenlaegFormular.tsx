@@ -47,9 +47,13 @@ export default function SammenlaegFormular({
   // Når man forlader siden, nulstilles tak-siden, så formularen er tom næste gang
   useEffect(() => {
     return () => {
+      setMaal("");
+      setBegrundelse("");
+      setFejl(null);
+      setSender(false);
       setFaerdig(false);
     };
-  }, []);
+  }, [kilde.slug]);
 
   function nytForslag() {
     setMaal("");

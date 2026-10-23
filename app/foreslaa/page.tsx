@@ -50,5 +50,11 @@ async function Indhold({
 
   const forvalgt = kategorier.some((k) => k.slug === valgt) ? (valgt ?? "") : "";
 
-  return <ForslagFormular kategorier={kategorier} forvalgtHoved={forvalgt} />;
+  return (
+    <ForslagFormular
+      key={forvalgt || "ny"}
+      kategorier={kategorier}
+      forvalgtHoved={forvalgt}
+    />
+  );
 }

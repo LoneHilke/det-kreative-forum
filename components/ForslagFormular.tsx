@@ -59,9 +59,17 @@ export default function ForslagFormular({
   // Når man forlader siden, nulstilles tak-siden, så formularen er tom næste gang
   useEffect(() => {
     return () => {
+      setNavn("");
+      setIkon("");
+      setIntro("");
+      setLignende([]);
+      setFejl(null);
+      setSender(false);
       setFaerdig(false);
+      setType(forvalgtHoved ? "under" : "hoved");
+      setHovedSlug(forvalgtHoved);
     };
-  }, []);
+  }, [forvalgtHoved]);
 
   // Tjek for lignende navne, mens man skriver
   useEffect(() => {

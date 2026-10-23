@@ -74,7 +74,8 @@ async function Indhold({
     .filter((m) => m.under.length > 0);
 
   return (
-    <SammenlaegFormular
+    <SammenlaegFormular 
+      key={fundet.under.slug}
       kilde={{
         slug: fundet.under.slug,
         navn: fundet.under.navn,
